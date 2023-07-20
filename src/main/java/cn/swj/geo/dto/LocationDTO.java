@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * @Author swj
  * @Date 2023/6/8 11:18
- * @Description: TODO
+ * @Description: 坐标DTO
  * @Version 1.0
  */
 @Data

@@ -25,9 +25,14 @@ public class RoundnessDTO {
         this.radius = radius;
     }
 
+    /**
+     * 圆心*
+     */
     private LocationDTO centerPoint;
 
-    //以米为单位
+    /**
+     * 半径 以米为单位*
+     */
     private String radius;
 
     public void check() {
