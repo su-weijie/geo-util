@@ -248,7 +248,7 @@ public class GeoUtil {
     }
 
     //check params
-    private static void calculateVerticalDistanceFromLineCheck(List<LocationDTO> locationDTOList, String x, String y) {
+    private static void calculateShortestDistanceFromLineCheck(List<LocationDTO> locationDTOList, String x, String y) {
         if (CollectionUtil.isEmpty(locationDTOList)) {
             throw new RuntimeException("locationDTOList is empty");
         }
@@ -265,8 +265,8 @@ public class GeoUtil {
     }
 
     //check params
-    private static void calculateVerticalDistanceFromLineCheck(List<LocationDTO> locationDTOList, String x, String y, String distance) {
-        calculateVerticalDistanceFromLineCheck(locationDTOList, x, y);
+    private static void calculateShortestDistanceFromLineCheck(List<LocationDTO> locationDTOList, String x, String y, String distance) {
+        calculateShortestDistanceFromLineCheck(locationDTOList, x, y);
 
         if (StrUtil.isEmpty(distance)) {
             throw new RuntimeException("distance is empty");
@@ -279,7 +279,7 @@ public class GeoUtil {
 
 
     //check params
-    private static void calculateVerticalDistanceFromLine4PointsCheck(List<LocationDTO> lineLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
+    private static void calculateShortestDistanceFromLine4PointsCheck(List<LocationDTO> lineLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
         if (CollectionUtil.isEmpty(lineLocationDTOList)) {
             throw new RuntimeException("lineLocationDTOList is empty");
         }
@@ -294,7 +294,7 @@ public class GeoUtil {
     }
 
     //check params
-    private static void calculateVerticalDistanceFromCurveCheck(List<LocationDTO> curveLocationDTOList, String x, String y) {
+    private static void calculateShortestDistanceFromCurveCheck(List<LocationDTO> curveLocationDTOList, String x, String y) {
         if (CollectionUtil.isEmpty(curveLocationDTOList)) {
             throw new RuntimeException("curveLocationDTOList is empty");
         }
@@ -309,8 +309,8 @@ public class GeoUtil {
     }
 
     //check params
-    private static void calculateVerticalDistanceFromCurveCheck(List<LocationDTO> curveLocationDTOList, String x, String y, String distance) {
-        calculateVerticalDistanceFromCurveCheck(curveLocationDTOList, x, y);
+    private static void calculateShortestDistanceFromCurveCheck(List<LocationDTO> curveLocationDTOList, String x, String y, String distance) {
+        calculateShortestDistanceFromCurveCheck(curveLocationDTOList, x, y);
         if (StrUtil.isEmpty(distance)) {
             throw new RuntimeException("distance is empty");
         }
@@ -321,7 +321,7 @@ public class GeoUtil {
     }
 
     //checkParams
-    private static void calculateVerticalDistanceFromCurve4PointsCheck(List<LocationDTO> curveLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
+    private static void calculateShortestDistanceFromCurve4PointsCheck(List<LocationDTO> curveLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
         if (CollectionUtil.isEmpty(curveLocationDTOList)) {
             throw new RuntimeException("curveLocationDTOList is empty");
         }
@@ -534,6 +534,9 @@ public class GeoUtil {
      */
     public static String calculateDistance(LocationDTO startLocation, LocationDTO endLocation) {
 
+        startLocation.check();
+        endLocation.check();
+
         // 定义坐标参考系统（这里使用默认的 WGS84 坐标系）
         CoordinateReferenceSystem crs = DefaultGeographicCRS.WGS84;
 
@@ -561,14 +564,14 @@ public class GeoUtil {
      * @param y                y
      * @return
      */
-    public static String calculateVerticalDistanceFromLine(List<LocationDTO> lineLocationList, String x, String y) {
+    public static String calculateShortestDistanceFromLine(List<LocationDTO> lineLocationList, String x, String y) {
 
-        calculateVerticalDistanceFromLineCheck(lineLocationList, x, y);
+        calculateShortestDistanceFromLineCheck(lineLocationList, x, y);
 
         LineString lineString = createLineString(lineLocationList);
 
-
         LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, createPoint(x, y));
+
         // 计算点到线的最短距离
         String minDistance = calculateDistance(new LocationDTO(x, y), minDistanceLocationDTO);
 
@@ -584,11 +587,11 @@ public class GeoUtil {
      * @param distance         指定最大距离
      * @return
      */
-    public static boolean calculateVerticalDistanceFromLine(List<LocationDTO> lineLocationList, String x, String y, String distance) {
+    public static boolean calculateShortestDistanceFromLine(List<LocationDTO> lineLocationList, String x, String y, String distance) {
 
-        calculateVerticalDistanceFromLineCheck(lineLocationList, x, y, distance);
+        calculateShortestDistanceFromLineCheck(lineLocationList, x, y, distance);
 
-        String shortestDistance = calculateVerticalDistanceFromLine(lineLocationList, x, y);
+        String shortestDistance = calculateShortestDistanceFromLine(lineLocationList, x, y);
 
         return Double.valueOf(shortestDistance) < Double.valueOf(distance);
     }
@@ -601,9 +604,9 @@ public class GeoUtil {
      * @param distance            指定最大距离
      * @return
      */
-    public static List<LocationDTO> calculateVerticalDistanceFromLine4Points(List<LocationDTO> lineLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
+    public static List<LocationDTO> calculateShortestDistanceFromLine4Points(List<LocationDTO> lineLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
 
-        calculateVerticalDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
+        calculateShortestDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
 
         //在指定范围内的经纬度
         List<LocationDTO> resLocationList = new ArrayList<>();
@@ -639,9 +642,9 @@ public class GeoUtil {
      * @param y
      * @return
      */
-    public static String calculateVerticalDistanceFromCurve(List<LocationDTO> curveLocationDTOList, String x, String y) {
+    public static String calculateShortestDistanceFromCurve(List<LocationDTO> curveLocationDTOList, String x, String y) {
 
-        calculateVerticalDistanceFromCurveCheck(curveLocationDTOList, x, y);
+        calculateShortestDistanceFromCurveCheck(curveLocationDTOList, x, y);
 
         // 创建 Coordinate 数组并添加经纬度点坐标
         LineString lineString = createLineString(curveLocationDTOList);
@@ -666,11 +669,11 @@ public class GeoUtil {
      * @param distance        指定最大距离
      * @return
      */
-    public static boolean calculateVerticalDistanceFromCurve(List<LocationDTO> locationDTOList, String x, String y, String distance) {
+    public static boolean calculateShortestDistanceFromCurve(List<LocationDTO> locationDTOList, String x, String y, String distance) {
 
-        calculateVerticalDistanceFromCurveCheck(locationDTOList, x, y, distance);
+        calculateShortestDistanceFromCurveCheck(locationDTOList, x, y, distance);
 
-        String oDistance = calculateVerticalDistanceFromCurve(locationDTOList, x, y);
+        String oDistance = calculateShortestDistanceFromCurve(locationDTOList, x, y);
 
         return Double.valueOf(oDistance) < Double.valueOf(distance);
     }
@@ -683,9 +686,9 @@ public class GeoUtil {
      * @param distance             指定最大距离
      * @return
      */
-    public static List<LocationDTO> calculateVerticalDistanceFromCurve4Points(List<LocationDTO> curveLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
+    public static List<LocationDTO> calculateShortestDistanceFromCurve4Points(List<LocationDTO> curveLocationDTOList, List<LocationDTO> locationDTOList, String distance) {
 
-        calculateVerticalDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
+        calculateShortestDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
 
         //在指定范围内的经纬度
         List<LocationDTO> resLocationList = new ArrayList<>();
@@ -707,6 +710,14 @@ public class GeoUtil {
         }
 
         return resLocationList;
+    }
+
+    public static void main(String[] args) {
+        List<LocationDTO> locationDTOList = new ArrayList<>();
+        locationDTOList.add(new LocationDTO("117.67043220213105","24.491018802078354"));
+        locationDTOList.add(new LocationDTO("117.67612530067976","24.49758866822211"));
+        String distance = calculateShortestDistanceFromLine(locationDTOList, "117.673901", "24.494979");
+        System.out.println(distance);
     }
 
 }
