@@ -37,7 +37,7 @@ public class RoundnessDTO {
 
     public void check() {
         centerPoint.check();
-        if (StrUtil.isEmpty(radius)) {
+        if (StrUtil.isBlank(radius)) {
             throw new RuntimeException("radius is empty");
         }
     }

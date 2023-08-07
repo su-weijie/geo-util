@@ -32,7 +32,7 @@ public class LocationDTO {
     private String lat;
 
     public void check() {
-        if (StrUtil.isEmpty(lng) || StrUtil.isEmpty(lat)) {
+        if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
             // x 经度  y 纬度
             throw new RuntimeException("x or y is empty");
         }
@@ -56,7 +56,7 @@ public class LocationDTO {
      * @return
      */
     public boolean equalsObj(Object o, String lngField, String latField) {
-        if (!StrUtil.isAllNotEmpty(lngField, latField)) {
+        if (!StrUtil.isAllNotBlank(lngField, latField)) {
             lngField = "lng";
             latField = "lat";
         }

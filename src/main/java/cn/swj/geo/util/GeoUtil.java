@@ -202,7 +202,7 @@ public class GeoUtil {
         //不允许点位中 存在有空值
         locationDTOList.stream().forEach(item -> item.check());
 
-        if (!StrUtil.isAllNotEmpty(x, y)) {
+        if (!StrUtil.isAllNotBlank(x, y)) {
             throw new RuntimeException("x or y is empty");
         }
     }
@@ -231,7 +231,7 @@ public class GeoUtil {
 
         roundnessDTO.check();
 
-        if (!StrUtil.isAllNotEmpty(x, y)) {
+        if (!StrUtil.isAllNotBlank(x, y)) {
             throw new RuntimeException("x or y is empty");
         }
 
@@ -259,7 +259,7 @@ public class GeoUtil {
             throw new RuntimeException("locationDTOList is empty");
         }
 
-        if (!StrUtil.isAllNotEmpty(x, y)) {
+        if (!StrUtil.isAllNotBlank(x, y)) {
             throw new RuntimeException("x or y is empty");
         }
 
@@ -274,11 +274,11 @@ public class GeoUtil {
     private static void calculateShortestDistanceFromLineCheck(List<LocationDTO> locationDTOList, String x, String y, String distance) {
         calculateShortestDistanceFromLineCheck(locationDTOList, x, y);
 
-        if (StrUtil.isEmpty(distance)) {
+        if (StrUtil.isBlank(distance)) {
             throw new RuntimeException("distance is empty");
         }
 
-        if (!StrUtil.isAllNotEmpty(x, y)) {
+        if (!StrUtil.isAllNotBlank(x, y)) {
             throw new RuntimeException("x or y is empty");
         }
     }
@@ -309,7 +309,7 @@ public class GeoUtil {
             throw new RuntimeException("curveLocationDTOList size must ge 3");
         }
 
-        if (!StrUtil.isAllNotEmpty(x, y)) {
+        if (!StrUtil.isAllNotBlank(x, y)) {
             throw new RuntimeException("x or y is empty");
         }
     }
@@ -317,7 +317,7 @@ public class GeoUtil {
     //check params
     private static void calculateShortestDistanceFromCurveCheck(List<LocationDTO> curveLocationDTOList, String x, String y, String distance) {
         calculateShortestDistanceFromCurveCheck(curveLocationDTOList, x, y);
-        if (StrUtil.isEmpty(distance)) {
+        if (StrUtil.isBlank(distance)) {
             throw new RuntimeException("distance is empty");
         }
 
@@ -611,8 +611,8 @@ public class GeoUtil {
     /**
      * 判断 objList 这些对象集合中的坐标 是否在 roundnessDTO 这个圆中*
      *
-     * @param roundnessDTO    圆心和半径
-     * @param objList 待比较的点
+     * @param roundnessDTO 圆心和半径
+     * @param objList      待比较的点
      * @return
      */
     public static <T> List<T> objListIsContainedRoundRegion(RoundnessDTO roundnessDTO, List<T> objList) {
@@ -776,7 +776,7 @@ public class GeoUtil {
     }
 
     /**
-     * 判断一个经纬度点到由两个经纬度点组成的线的垂直距离 是否 小于指定值 distance*
+     * 判断一个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
      *
      * @param locationDTOList
      * @param x
@@ -834,20 +834,7 @@ public class GeoUtil {
      * @return
      */
     public static List<LocationDTO> convert2LocationDTOList(List<?> objectList) {
-        if (CollectionUtil.isEmpty(objectList)) {
-            throw new RuntimeException("objectList is empty");
-        }
-        List<LocationDTO> locationDTOList = new ArrayList<>();
-        for (Object o : objectList) {
-            JSONObject jsonObject = JSONUtil.parseObj(o);
-            String lng = jsonObject.getStr("lng");
-            String lat = jsonObject.getStr("lat");
-            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
-                throw new RuntimeException("There are objects in the collection without one of the fields (lng,lat)");
-            }
-            locationDTOList.add(new LocationDTO(lng, lat));
-        }
-        return locationDTOList;
+        return convert2LocationDTOList(objectList, null, null);
     }
 
     /**
@@ -857,6 +844,10 @@ public class GeoUtil {
      * @return
      */
     public static List<LocationDTO> convert2LocationDTOList(List<?> objectList, String lngField, String latField) {
+        if (!StrUtil.isAllNotBlank(lngField, latField)) {
+            lngField = "lng";
+            latField = "lat";
+        }
         if (CollectionUtil.isEmpty(objectList)) {
             throw new RuntimeException("objectList is empty");
         }
@@ -881,16 +872,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList) {
-        adaptLocationToObjectsCheck(locationDTOList, objectList);
-        List<T> tempObjectList = new ArrayList<>();
-        tempObjectList.addAll(objectList);
-        List<T> resList = new ArrayList<>();
-        for (LocationDTO locationDTO : locationDTOList) {
-            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item)).collect(Collectors.toList()).get(0);
-            tempObjectList.remove(o);
-            resList.add(o);
-        }
-        return resList;
+        return adaptLocationToObjects(locationDTOList, objectList, null, null);
     }
 
     /**
@@ -906,7 +888,7 @@ public class GeoUtil {
         tempObjectList.addAll(objectList);
         List<T> resList = new ArrayList<>();
         for (LocationDTO locationDTO : locationDTOList) {
-            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item,lngField,latField)).collect(Collectors.toList()).get(0);
+            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item, lngField, latField)).collect(Collectors.toList()).get(0);
             tempObjectList.remove(o);
             resList.add(o);
         }
