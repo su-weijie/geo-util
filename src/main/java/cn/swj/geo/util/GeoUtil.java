@@ -4,18 +4,24 @@ package cn.swj.geo.util;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import cn.swj.geo.dto.LocationDTO;
 import cn.swj.geo.dto.RoundnessDTO;
+import javafx.scene.control.TableView;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.GeodeticCalculator;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.geotools.util.ObjectCache;
 import org.locationtech.jts.algorithm.ConvexHull;
 import org.locationtech.jts.geom.*;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @Author swj
@@ -140,7 +146,7 @@ public class GeoUtil {
      * @param targetPoint
      * @return
      */
-    public static LocationDTO getMinDistanceLocationDTO(LineString lineString, Point targetPoint) {
+    private static LocationDTO getMinDistanceLocationDTO(LineString lineString, Point targetPoint) {
         // 初始化最小距离和最近的坐标点
         double minDistance = Double.MAX_VALUE;
         Coordinate closestPoint = null;
@@ -343,6 +349,35 @@ public class GeoUtil {
         }
     }
 
+    /**
+     * 校验对象中是否有经纬度俩个属性*
+     *
+     * @param objectList
+     */
+    private static void checkObjectListIzContainField(List<?> objectList) {
+        if (CollectionUtil.isEmpty(objectList)) {
+            throw new RuntimeException("objectList is empty");
+        }
+        for (Object o : objectList) {
+            JSONObject jsonObject = JSONUtil.parseObj(o);
+            String lng = jsonObject.getStr("lng");
+            String lat = jsonObject.getStr("lat");
+            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+                throw new RuntimeException("There are objects in the collection without one of the fields (lng,lat)");
+            }
+        }
+    }
+
+    //checkParam
+    private static void adaptLocationToObjectsCheck(List<LocationDTO> locationDTOList, List<?> objectList) {
+        if (CollectionUtil.isEmpty(locationDTOList)) {
+            throw new RuntimeException("locationDTOList is empty");
+        }
+        locationDTOList.stream().forEach(item -> item.check());
+
+        checkObjectListIzContainField(objectList);
+
+    }
 
     //-------------------------------------------------------------------------------------------------------------
 
@@ -455,9 +490,33 @@ public class GeoUtil {
         return resList;
     }
 
+    /**
+     * 判断 对象集合 里面的点 是否在 locationVOList这个区域中，自动取最大几何图形*
+     *
+     * @param regionLocationDTOList 几何图形组成的点位
+     * @param objList               待比较的点
+     * @return 有在里面的点位信息
+     */
+    public static <T> List<T> objListIsContainedRegion(List<LocationDTO> regionLocationDTOList, List<T> objList) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
+
+        pointListIsContainedRegionCheck(regionLocationDTOList, locationDTOList);
+
+        //几何图形
+        Polygon polygon = getPolygon(regionLocationDTOList, true);
+
+        //return List
+        List<LocationDTO> resList = getLocationDTOS(locationDTOList, polygon);
+
+        List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
 
     /**
-     * 按照 locationVOList的点位顺序组成区域*
+     * 按照 regionLocationDTOList 的点位顺序组成区域,并判断 locationDTOList 里的点位是否在这区域里面*
      *
      * @param regionLocationDTOList 几何图形组成的点位
      * @param locationDTOList       待判断的点位
@@ -474,6 +533,30 @@ public class GeoUtil {
 
         return resList;
     }
+
+    /**
+     * 按照 regionLocationDTOList 的点位顺序组成区域,并判断 locationDTOList 里的点位是否在这区域里面*
+     *
+     * @param regionLocationDTOList 几何图形组成的点位
+     * @param objList               对象集合
+     * @return
+     */
+    public static <T> List<T> objListIsContainedRegionSequence(List<LocationDTO> regionLocationDTOList, List<T> objList) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
+
+        pointListIsContainedRegionCheck(regionLocationDTOList, locationDTOList);
+
+        //几何图形
+        Polygon polygon = getPolygon(regionLocationDTOList, false);
+
+        List<LocationDTO> resList = getLocationDTOS(locationDTOList, polygon);
+
+        List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
 
     /**
      * 判断x y这个坐标 是否在 roundnessDTO 这个圆中*
@@ -524,6 +607,39 @@ public class GeoUtil {
 
         return resList;
     }
+
+    /**
+     * 判断 objList 这些对象集合中的坐标 是否在 roundnessDTO 这个圆中*
+     *
+     * @param roundnessDTO    圆心和半径
+     * @param objList 待比较的点
+     * @return
+     */
+    public static <T> List<T> objListIsContainedRoundRegion(RoundnessDTO roundnessDTO, List<T> objList) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
+
+        pointListIsContainedRoundRegionCheck(roundnessDTO, locationDTOList);
+
+        Geometry circle = createCircle(roundnessDTO);
+
+        List<LocationDTO> resList = new ArrayList<>();
+
+        for (LocationDTO locationDTO : locationDTOList) {
+            if (ObjectUtil.isEmpty(locationDTO)) {
+                continue;
+            }
+            Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(locationDTO.getLng()), Double.valueOf(locationDTO.getLat())));
+            if (circle.contains(point)) {
+                resList.add(locationDTO);
+            }
+        }
+
+        List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
 
     /**
      * 计算俩个点之间的距离*
@@ -652,7 +768,6 @@ public class GeoUtil {
         // 创建 Point 对象
         Point point = geometryFactory.createPoint(createCoordinate(x, y));
 
-
         LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, point);
 
         String distance = calculateDistance(new LocationDTO(x, y), minDistanceLocationDTO);
@@ -712,12 +827,90 @@ public class GeoUtil {
         return resLocationList;
     }
 
-    public static void main(String[] args) {
+    /**
+     * 将对象转换为LocationDTO*
+     *
+     * @param objectList 对象集合
+     * @return
+     */
+    public static List<LocationDTO> convert2LocationDTOList(List<?> objectList) {
+        if (CollectionUtil.isEmpty(objectList)) {
+            throw new RuntimeException("objectList is empty");
+        }
         List<LocationDTO> locationDTOList = new ArrayList<>();
-        locationDTOList.add(new LocationDTO("117.67043220213105","24.491018802078354"));
-        locationDTOList.add(new LocationDTO("117.67612530067976","24.49758866822211"));
-        String distance = calculateShortestDistanceFromLine(locationDTOList, "117.673901", "24.494979");
-        System.out.println(distance);
+        for (Object o : objectList) {
+            JSONObject jsonObject = JSONUtil.parseObj(o);
+            String lng = jsonObject.getStr("lng");
+            String lat = jsonObject.getStr("lat");
+            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+                throw new RuntimeException("There are objects in the collection without one of the fields (lng,lat)");
+            }
+            locationDTOList.add(new LocationDTO(lng, lat));
+        }
+        return locationDTOList;
+    }
+
+    /**
+     * 将对象转换为LocationDTO,并指定经纬度的字段*
+     *
+     * @param objectList 对象集合
+     * @return
+     */
+    public static List<LocationDTO> convert2LocationDTOList(List<?> objectList, String lngField, String latField) {
+        if (CollectionUtil.isEmpty(objectList)) {
+            throw new RuntimeException("objectList is empty");
+        }
+        List<LocationDTO> locationDTOList = new ArrayList<>();
+        for (Object o : objectList) {
+            JSONObject jsonObject = JSONUtil.parseObj(o);
+            String lng = jsonObject.getStr(lngField);
+            String lat = jsonObject.getStr(latField);
+            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+                throw new RuntimeException("There are objects in the collection without one of the fields (" + latField + "," + latField + ")");
+            }
+            locationDTOList.add(new LocationDTO(lng, lat));
+        }
+        return locationDTOList;
+    }
+
+    /**
+     * 对传入的坐标集合、跟对象集合做一个适配*
+     *
+     * @param locationDTOList 坐标集合
+     * @param objectList      对象集合
+     * @return
+     */
+    public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList) {
+        adaptLocationToObjectsCheck(locationDTOList, objectList);
+        List<T> tempObjectList = new ArrayList<>();
+        tempObjectList.addAll(objectList);
+        List<T> resList = new ArrayList<>();
+        for (LocationDTO locationDTO : locationDTOList) {
+            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item)).collect(Collectors.toList()).get(0);
+            tempObjectList.remove(o);
+            resList.add(o);
+        }
+        return resList;
+    }
+
+    /**
+     * 对传入的坐标集合、跟对象集合做一个适配*
+     *
+     * @param locationDTOList 坐标集合
+     * @param objectList      对象集合
+     * @return
+     */
+    public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList, String lngField, String latField) {
+        adaptLocationToObjectsCheck(locationDTOList, objectList);
+        List<T> tempObjectList = new ArrayList<>();
+        tempObjectList.addAll(objectList);
+        List<T> resList = new ArrayList<>();
+        for (LocationDTO locationDTO : locationDTOList) {
+            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item,lngField,latField)).collect(Collectors.toList()).get(0);
+            tempObjectList.remove(o);
+            resList.add(o);
+        }
+        return resList;
     }
 
 }
