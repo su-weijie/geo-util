@@ -366,7 +366,7 @@ public class GeoUtil {
             String lng = jsonObject.getStr(lngField);
             String lat = jsonObject.getStr(latField);
             if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
-                throw new RuntimeException("There are objects in the collection without one of the fields (" + latField + "," + latField + ")");
+                throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
             }
         }
     }
@@ -380,73 +380,6 @@ public class GeoUtil {
 
         checkObjectListIzContainField(objectList, lngField, latField);
 
-    }
-
-    //-------------------------------------------------------------------------------------------------------------
-
-    /**
-     * 按照 regionLocationList 的点位顺序 组成区域,在判断xy这个坐标是否包含在里面*
-     *
-     * @param regionLocationList 几何图形组成的点位
-     * @param x                  经度
-     * @param y                  纬度
-     * @return
-     */
-    public static boolean pointIsContainedRegionSequence(List<LocationDTO> regionLocationList, String x, String y) {
-
-        pointIsContainedRegionCheck(regionLocationList, x, y);
-
-        //几何图形
-        Polygon polygon = getPolygon(regionLocationList, false);
-
-        //create point
-        Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(x), Double.valueOf(y)));
-
-        if (polygon.contains(point)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * 判断x y 是否在 locationVOList这个区域中，自动取最大几何图形*
-     *
-     * @param regionLocationList 几何图形组成的点位
-     * @param x                  经度
-     * @param y                  纬度
-     * @return
-     */
-    public static boolean pointIsContainedRegion(List<LocationDTO> regionLocationList, String x, String y) {
-
-        pointIsContainedRegionCheck(regionLocationList, x, y);
-
-        //几何图形
-        Polygon polygon = getPolygon(regionLocationList, true);
-
-        //create point
-        Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(x), Double.valueOf(y)));
-
-        return polygon.contains(point);
-    }
-
-    /**
-     * 判断point 是否在 locationVOList这个区域中，自动取最大几何图形*
-     *
-     * @param regionLocationList 几何图形组成的点位
-     * @param point              点位
-     * @return
-     */
-    @Deprecated
-    public static boolean pointIsContainedRegion(List<LocationDTO> regionLocationList, Point point) {
-
-        if (CollectionUtil.isEmpty(regionLocationList)) {
-            throw new RuntimeException("list is null");
-        }
-
-        Polygon polygon = getPolygon(regionLocationList, true);
-
-        return polygon.contains(point);
     }
 
     /**
@@ -473,6 +406,77 @@ public class GeoUtil {
         return resList;
     }
 
+    //-------------------------------------------------------------------------------------------------------------
+
+
+    /**
+     * 按照 regionLocationList 的点位顺序 组成区域,在判断xy这个坐标是否包含在里面*
+     *
+     * @param regionLocationList 几何图形组成的点位
+     * @param x                  经度
+     * @param y                  纬度
+     * @return
+     */
+    public static boolean pointIsContainedRegionSequence(List<LocationDTO> regionLocationList, String x, String y) {
+
+        pointIsContainedRegionCheck(regionLocationList, x, y);
+
+        //几何图形
+        Polygon polygon = getPolygon(regionLocationList, false);
+
+        //create point
+        Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(x), Double.valueOf(y)));
+
+        if (polygon.contains(point)) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * 判断x y 是否在 locationVOList这个区域中，自动取最大几何图形*
+     *
+     * @param regionLocationList 几何图形组成的点位
+     * @param x                  经度
+     * @param y                  纬度
+     * @return
+     */
+    public static boolean pointIsContainedRegion(List<LocationDTO> regionLocationList, String x, String y) {
+
+        pointIsContainedRegionCheck(regionLocationList, x, y);
+
+        //几何图形
+        Polygon polygon = getPolygon(regionLocationList, true);
+
+        //create point
+        Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(x), Double.valueOf(y)));
+
+        return polygon.contains(point);
+    }
+
+
+    /**
+     * 判断point 是否在 locationVOList这个区域中，自动取最大几何图形*
+     *
+     * @param regionLocationList 几何图形组成的点位
+     * @param point              点位
+     * @return
+     */
+    @Deprecated
+    public static boolean pointIsContainedRegion(List<LocationDTO> regionLocationList, Point point) {
+
+        if (CollectionUtil.isEmpty(regionLocationList)) {
+            throw new RuntimeException("list is null");
+        }
+
+        Polygon polygon = getPolygon(regionLocationList, true);
+
+        return polygon.contains(point);
+    }
+
+
     /**
      * 判断 locationDTOList 里面的点 是否在 locationVOList这个区域中，自动取最大几何图形*
      *
@@ -493,6 +497,7 @@ public class GeoUtil {
         return resList;
     }
 
+
     /**
      * 判断 对象集合 里面的点 是否在 locationVOList这个区域中，自动取最大几何图形*
      *
@@ -504,15 +509,28 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
 
-        pointListIsContainedRegionCheck(regionLocationDTOList, locationDTOList);
-
-        //几何图形
-        Polygon polygon = getPolygon(regionLocationDTOList, true);
-
-        //return List
-        List<LocationDTO> resList = getLocationDTOS(locationDTOList, polygon);
+        List<LocationDTO> resList = pointListIsContainedRegion(regionLocationDTOList, locationDTOList);
 
         List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
+
+    /**
+     * 判断 对象集合 里面的点 是否在 locationVOList这个区域中，自动取最大几何图形*
+     *
+     * @param regionLocationDTOList 几何图形组成的点位
+     * @param objList               待比较的点
+     * @return 有在里面的点位信息
+     */
+    public static <T> List<T> objListIsContainedRegion(List<LocationDTO> regionLocationDTOList, List<T> objList, String lngField, String latField) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
+
+        List<LocationDTO> resList = pointListIsContainedRegion(regionLocationDTOList, locationDTOList);
+
+        List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
         return tList;
     }
@@ -537,6 +555,7 @@ public class GeoUtil {
         return resList;
     }
 
+
     /**
      * 按照 regionLocationDTOList 的点位顺序组成区域,并判断 locationDTOList 里的点位是否在这区域里面*
      *
@@ -548,14 +567,28 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
 
-        pointListIsContainedRegionCheck(regionLocationDTOList, locationDTOList);
-
-        //几何图形
-        Polygon polygon = getPolygon(regionLocationDTOList, false);
-
-        List<LocationDTO> resList = getLocationDTOS(locationDTOList, polygon);
+        List<LocationDTO> resList = pointListIsContainedRegionSequence(regionLocationDTOList, locationDTOList);
 
         List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
+
+    /**
+     * 按照 regionLocationDTOList 的点位顺序组成区域,并判断 locationDTOList 里的点位是否在这区域里面*
+     *
+     * @param regionLocationDTOList 几何图形组成的点位
+     * @param objList               对象集合
+     * @return
+     */
+    public static <T> List<T> objListIsContainedRegionSequence(List<LocationDTO> regionLocationDTOList, List<T> objList, String lngField, String latField) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
+
+        List<LocationDTO> resList = pointListIsContainedRegionSequence(regionLocationDTOList, locationDTOList);
+
+        List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
         return tList;
     }
@@ -622,23 +655,27 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
 
-        pointListIsContainedRoundRegionCheck(roundnessDTO, locationDTOList);
-
-        Geometry circle = createCircle(roundnessDTO);
-
-        List<LocationDTO> resList = new ArrayList<>();
-
-        for (LocationDTO locationDTO : locationDTOList) {
-            if (ObjectUtil.isEmpty(locationDTO)) {
-                continue;
-            }
-            Point point = geometryFactory.createPoint(new Coordinate(Double.valueOf(locationDTO.getLng()), Double.valueOf(locationDTO.getLat())));
-            if (circle.contains(point)) {
-                resList.add(locationDTO);
-            }
-        }
+        List<LocationDTO> resList = pointListIsContainedRoundRegion(roundnessDTO, locationDTOList);
 
         List<T> tList = adaptLocationToObjects(resList, objList);
+
+        return tList;
+    }
+
+    /**
+     * 判断 objList 这些对象集合中的坐标 是否在 roundnessDTO 这个圆中*
+     *
+     * @param roundnessDTO 圆心和半径
+     * @param objList      待比较的点
+     * @return
+     */
+    public static <T> List<T> objListIsContainedRoundRegion(RoundnessDTO roundnessDTO, List<T> objList, String lngField, String latField) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
+
+        List<LocationDTO> resList = pointListIsContainedRoundRegion(roundnessDTO, locationDTOList);
+
+        List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
         return tList;
     }
@@ -681,27 +718,12 @@ public class GeoUtil {
      * @param endObj   结束坐标
      * @return
      */
-    public static String calculateDistanceByObj(Object startObj, LocationDTO endObj) {
+    public static String calculateDistanceByObj(Object startObj, Object endObj) {
 
         LocationDTO startLocation = convert2LocationDTO(startObj);
         LocationDTO endLocation = convert2LocationDTO(endObj);
 
-        // 定义坐标参考系统（这里使用默认的 WGS84 坐标系）
-        CoordinateReferenceSystem crs = DefaultGeographicCRS.WGS84;
-
-        // 创建地理计算器
-        GeodeticCalculator calculator = new GeodeticCalculator(crs);
-
-        // 设置起始点坐标
-        calculator.setStartingGeographicPoint(Double.valueOf(startLocation.getLng()), Double.valueOf(startLocation.getLat()));
-
-        // 设置目标点坐标
-        calculator.setDestinationGeographicPoint(Double.valueOf(endLocation.getLng()), Double.valueOf(endLocation.getLat()));
-
-        // 计算直线距离
-        double distance = calculator.getOrthodromicDistance();
-
-        return String.valueOf(distance);
+        return calculateDistance(startLocation, endLocation);
     }
 
 
@@ -796,32 +818,9 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
 
-        calculateShortestDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
+        List<LocationDTO> resList = calculateShortestDistanceFromLine4Points(lineLocationDTOList, locationDTOList, distance);
 
-        //在指定范围内的经纬度
-        List<LocationDTO> resLocationList = new ArrayList<>();
-
-        LineString lineString = createLineString(lineLocationDTOList);
-
-        // 创建线段
-
-
-        for (LocationDTO locationDTO : locationDTOList) {
-            // 将点投影到线上
-
-            Point point = createPoint(locationDTO.getLng(), locationDTO.getLat());
-
-            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, point);
-
-            // 计算点到线的最短距离
-            String minDistace = calculateDistance(locationDTO, minDistanceLocationDTO);
-
-            if (Double.valueOf(minDistace) < Double.valueOf(distance)) {
-                resLocationList.add(locationDTO);
-            }
-        }
-
-        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+        List<T> tList = adaptLocationToObjects(resList, objList);
 
         return tList;
     }
@@ -841,32 +840,9 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
-        calculateShortestDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
+        List<LocationDTO> resList = calculateShortestDistanceFromLine4Points(lineLocationDTOList, locationDTOList, distance);
 
-        //在指定范围内的经纬度
-        List<LocationDTO> resLocationList = new ArrayList<>();
-
-        LineString lineString = createLineString(lineLocationDTOList);
-
-        // 创建线段
-
-
-        for (LocationDTO locationDTO : locationDTOList) {
-            // 将点投影到线上
-
-            Point point = createPoint(locationDTO.getLng(), locationDTO.getLat());
-
-            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, point);
-
-            // 计算点到线的最短距离
-            String minDistace = calculateDistance(locationDTO, minDistanceLocationDTO);
-
-            if (Double.valueOf(minDistace) < Double.valueOf(distance)) {
-                resLocationList.add(locationDTO);
-            }
-        }
-
-        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+        List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
         return tList;
     }
@@ -960,28 +936,9 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
 
-        calculateShortestDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
+        List<LocationDTO> resList = calculateShortestDistanceFromCurve4Points(curveLocationDTOList, locationDTOList, distance);
 
-        //在指定范围内的经纬度
-        List<LocationDTO> resLocationList = new ArrayList<>();
-
-        // 创建 Coordinate 数组并添加经纬度点坐标
-        LineString lineString = createLineString(curveLocationDTOList);
-
-        for (LocationDTO locationDTO : locationDTOList) {
-
-            Point targetPoint = createPoint(locationDTO.getLng(), locationDTO.getLat());
-
-            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, targetPoint);
-
-            String distanceInMeters = calculateDistance(locationDTO, minDistanceLocationDTO);
-
-            if (Double.valueOf(distanceInMeters) <= Double.valueOf(distance)) {
-                resLocationList.add(locationDTO);
-            }
-        }
-
-        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+        List<T> tList = adaptLocationToObjects(resList, objList);
 
         return tList;
     }
@@ -1000,28 +957,9 @@ public class GeoUtil {
 
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
-        calculateShortestDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
+        List<LocationDTO> resList = calculateShortestDistanceFromCurve4Points(curveLocationDTOList, locationDTOList, distance);
 
-        //在指定范围内的经纬度
-        List<LocationDTO> resLocationList = new ArrayList<>();
-
-        // 创建 Coordinate 数组并添加经纬度点坐标
-        LineString lineString = createLineString(curveLocationDTOList);
-
-        for (LocationDTO locationDTO : locationDTOList) {
-
-            Point targetPoint = createPoint(locationDTO.getLng(), locationDTO.getLat());
-
-            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, targetPoint);
-
-            String distanceInMeters = calculateDistance(locationDTO, minDistanceLocationDTO);
-
-            if (Double.valueOf(distanceInMeters) <= Double.valueOf(distance)) {
-                resLocationList.add(locationDTO);
-            }
-        }
-
-        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+        List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
         return tList;
     }
@@ -1067,7 +1005,7 @@ public class GeoUtil {
             String lng = jsonObject.getStr(lngField);
             String lat = jsonObject.getStr(latField);
             if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
-                throw new RuntimeException("There are objects in the collection without one of the fields (" + latField + "," + latField + ")");
+                throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
             }
             locationDTOList.add(new LocationDTO(lng, lat));
         }
