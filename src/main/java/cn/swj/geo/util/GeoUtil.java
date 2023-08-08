@@ -20,6 +20,7 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -671,6 +672,36 @@ public class GeoUtil {
         return String.valueOf(distance);
     }
 
+    /**
+     * 计算俩个点之间的距离*
+     *
+     * @param startObj 开始坐标
+     * @param endObj   结束坐标
+     * @return
+     */
+    public static String calculateDistanceByObj(Object startObj, LocationDTO endObj) {
+
+        LocationDTO startLocation = convert2LocationDTO(startObj);
+        LocationDTO endLocation = convert2LocationDTO(endObj);
+
+        // 定义坐标参考系统（这里使用默认的 WGS84 坐标系）
+        CoordinateReferenceSystem crs = DefaultGeographicCRS.WGS84;
+
+        // 创建地理计算器
+        GeodeticCalculator calculator = new GeodeticCalculator(crs);
+
+        // 设置起始点坐标
+        calculator.setStartingGeographicPoint(Double.valueOf(startLocation.getLng()), Double.valueOf(startLocation.getLat()));
+
+        // 设置目标点坐标
+        calculator.setDestinationGeographicPoint(Double.valueOf(endLocation.getLng()), Double.valueOf(endLocation.getLat()));
+
+        // 计算直线距离
+        double distance = calculator.getOrthodromicDistance();
+
+        return String.valueOf(distance);
+    }
+
 
     /**
      * 计算一个经纬度点到由两个经纬度点组成的线的最短距离*
@@ -713,7 +744,7 @@ public class GeoUtil {
     }
 
     /**
-     * 判断多个个经纬度点到由两个经纬度点组成的线的垂直距离 是否 小于指定值 distance*
+     * 判断多个个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
      *
      * @param lineLocationDTOList 线的点
      * @param locationDTOList     点位列表
@@ -748,6 +779,94 @@ public class GeoUtil {
         }
 
         return resLocationList;
+    }
+
+
+    /**
+     * 判断多个个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
+     *
+     * @param lineLocationDTOList 线的点
+     * @param objList             对象列表
+     * @param distance            指定最大距离
+     * @return
+     */
+    public static <T> List<T> calculateShortestDistanceFromLine4Objs(List<LocationDTO> lineLocationDTOList, List<T> objList, String distance) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
+
+        calculateShortestDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
+
+        //在指定范围内的经纬度
+        List<LocationDTO> resLocationList = new ArrayList<>();
+
+        LineString lineString = createLineString(lineLocationDTOList);
+
+        // 创建线段
+
+
+        for (LocationDTO locationDTO : locationDTOList) {
+            // 将点投影到线上
+
+            Point point = createPoint(locationDTO.getLng(), locationDTO.getLat());
+
+            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, point);
+
+            // 计算点到线的最短距离
+            String minDistace = calculateDistance(locationDTO, minDistanceLocationDTO);
+
+            if (Double.valueOf(minDistace) < Double.valueOf(distance)) {
+                resLocationList.add(locationDTO);
+            }
+        }
+
+        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+
+        return tList;
+    }
+
+
+    /**
+     * 判断多个个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
+     *
+     * @param lineLocationDTOList 线的点
+     * @param objList             对象列表
+     * @param distance            指定最大距离
+     * @param lngField            经度的字段名
+     * @param latField            纬度的字段名
+     * @return
+     */
+    public static <T> List<T> calculateShortestDistanceFromLine4Objs(List<LocationDTO> lineLocationDTOList, List<T> objList, String distance, String lngField, String latField) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
+
+        calculateShortestDistanceFromLine4PointsCheck(lineLocationDTOList, locationDTOList, distance);
+
+        //在指定范围内的经纬度
+        List<LocationDTO> resLocationList = new ArrayList<>();
+
+        LineString lineString = createLineString(lineLocationDTOList);
+
+        // 创建线段
+
+
+        for (LocationDTO locationDTO : locationDTOList) {
+            // 将点投影到线上
+
+            Point point = createPoint(locationDTO.getLng(), locationDTO.getLat());
+
+            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, point);
+
+            // 计算点到线的最短距离
+            String minDistace = calculateDistance(locationDTO, minDistanceLocationDTO);
+
+            if (Double.valueOf(minDistace) < Double.valueOf(distance)) {
+                resLocationList.add(locationDTO);
+            }
+        }
+
+        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+
+        return tList;
     }
 
     /**
@@ -828,6 +947,85 @@ public class GeoUtil {
     }
 
     /**
+     * 判断多个个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
+     *
+     * @param curveLocationDTOList 线的点
+     * @param objList              对象列表
+     * @param distance             指定最大距离
+     * @return
+     */
+    public static <T> List<T> calculateShortestDistanceFromCurve4Objs(List<LocationDTO> curveLocationDTOList, List<T> objList, String distance) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
+
+        calculateShortestDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
+
+        //在指定范围内的经纬度
+        List<LocationDTO> resLocationList = new ArrayList<>();
+
+        // 创建 Coordinate 数组并添加经纬度点坐标
+        LineString lineString = createLineString(curveLocationDTOList);
+
+        for (LocationDTO locationDTO : locationDTOList) {
+
+            Point targetPoint = createPoint(locationDTO.getLng(), locationDTO.getLat());
+
+            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, targetPoint);
+
+            String distanceInMeters = calculateDistance(locationDTO, minDistanceLocationDTO);
+
+            if (Double.valueOf(distanceInMeters) <= Double.valueOf(distance)) {
+                resLocationList.add(locationDTO);
+            }
+        }
+
+        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+
+        return tList;
+    }
+
+    /**
+     * 判断多个个经纬度点到由两个经纬度点组成的线的最短距离 是否 小于指定值 distance*
+     *
+     * @param curveLocationDTOList 线的点
+     * @param objList              对象列表
+     * @param distance             指定最大距离
+     * @param lngField             经度的字段名
+     * @param latField             纬度的字段名
+     * @return
+     */
+    public static <T> List<T> calculateShortestDistanceFromCurve4Objs(List<LocationDTO> curveLocationDTOList, List<T> objList, String distance, String lngField, String latField) {
+
+        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
+
+        calculateShortestDistanceFromCurve4PointsCheck(curveLocationDTOList, locationDTOList, distance);
+
+        //在指定范围内的经纬度
+        List<LocationDTO> resLocationList = new ArrayList<>();
+
+        // 创建 Coordinate 数组并添加经纬度点坐标
+        LineString lineString = createLineString(curveLocationDTOList);
+
+        for (LocationDTO locationDTO : locationDTOList) {
+
+            Point targetPoint = createPoint(locationDTO.getLng(), locationDTO.getLat());
+
+            LocationDTO minDistanceLocationDTO = getMinDistanceLocationDTO(lineString, targetPoint);
+
+            String distanceInMeters = calculateDistance(locationDTO, minDistanceLocationDTO);
+
+            if (Double.valueOf(distanceInMeters) <= Double.valueOf(distance)) {
+                resLocationList.add(locationDTO);
+            }
+        }
+
+        List<T> tList = adaptLocationToObjects(resLocationList, objList);
+
+        return tList;
+    }
+
+
+    /**
      * 将对象转换为LocationDTO*
      *
      * @param objectList 对象集合
@@ -835,6 +1033,16 @@ public class GeoUtil {
      */
     public static List<LocationDTO> convert2LocationDTOList(List<?> objectList) {
         return convert2LocationDTOList(objectList, null, null);
+    }
+
+    /**
+     * 将对象转换为LocationDTO*
+     *
+     * @param obj 对象
+     * @return
+     */
+    public static LocationDTO convert2LocationDTO(Object obj) {
+        return convert2LocationDTOList(Arrays.asList(obj), null, null).get(0);
     }
 
     /**
