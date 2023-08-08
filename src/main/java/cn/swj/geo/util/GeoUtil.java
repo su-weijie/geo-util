@@ -8,11 +8,9 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import cn.swj.geo.dto.LocationDTO;
 import cn.swj.geo.dto.RoundnessDTO;
-import javafx.scene.control.TableView;
 import org.geotools.geometry.jts.JTSFactoryFinder;
 import org.geotools.referencing.GeodeticCalculator;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.util.ObjectCache;
 import org.locationtech.jts.algorithm.ConvexHull;
 import org.locationtech.jts.geom.*;
 import org.opengis.geometry.DirectPosition;
@@ -355,28 +353,32 @@ public class GeoUtil {
      *
      * @param objectList
      */
-    private static void checkObjectListIzContainField(List<?> objectList) {
+    private static void checkObjectListIzContainField(List<?> objectList, String lngField, String latField) {
+        if (!StrUtil.isAllNotBlank(lngField, latField)) {
+            lngField = "lng";
+            latField = "lat";
+        }
         if (CollectionUtil.isEmpty(objectList)) {
             throw new RuntimeException("objectList is empty");
         }
         for (Object o : objectList) {
             JSONObject jsonObject = JSONUtil.parseObj(o);
-            String lng = jsonObject.getStr("lng");
-            String lat = jsonObject.getStr("lat");
+            String lng = jsonObject.getStr(lngField);
+            String lat = jsonObject.getStr(latField);
             if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
-                throw new RuntimeException("There are objects in the collection without one of the fields (lng,lat)");
+                throw new RuntimeException("There are objects in the collection without one of the fields (" + latField + "," + latField + ")");
             }
         }
     }
 
     //checkParam
-    private static void adaptLocationToObjectsCheck(List<LocationDTO> locationDTOList, List<?> objectList) {
+    private static void adaptLocationToObjectsCheck(List<LocationDTO> locationDTOList, List<?> objectList, String lngField, String latField) {
         if (CollectionUtil.isEmpty(locationDTOList)) {
             throw new RuntimeException("locationDTOList is empty");
         }
         locationDTOList.stream().forEach(item -> item.check());
 
-        checkObjectListIzContainField(objectList);
+        checkObjectListIzContainField(objectList, lngField, latField);
 
     }
 
@@ -1091,7 +1093,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList, String lngField, String latField) {
-        adaptLocationToObjectsCheck(locationDTOList, objectList);
+        adaptLocationToObjectsCheck(locationDTOList, objectList, lngField, latField);
         List<T> tempObjectList = new ArrayList<>();
         tempObjectList.addAll(objectList);
         List<T> resList = new ArrayList<>();
