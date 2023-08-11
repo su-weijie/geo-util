@@ -1,6 +1,9 @@
 package cn.swj.geo.dto;
 
 import cn.hutool.core.util.StrUtil;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -10,6 +13,7 @@ import lombok.Data;
  * @Version 1.0
  */
 @Data
+@ApiModel(value = "圆形区域对象",description = "构造圆形区域的参数")
 public class RoundnessDTO {
 
     public RoundnessDTO() {
@@ -28,11 +32,13 @@ public class RoundnessDTO {
     /**
      * 圆心*
      */
+    @ApiModelProperty(value = "圆心")
     private LocationDTO centerPoint;
 
     /**
      * 半径 以米为单位*
      */
+    @ApiModelProperty(value = "半径",notes = "以米为单位")
     private String radius;
 
     public void check() {

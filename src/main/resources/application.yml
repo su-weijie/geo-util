@@ -1,0 +1,12 @@
+server:
+  servlet:
+    context-path:
+  port: 8080
+
+knife4j:
+  enable: true
+  production: false
+  basic:
+    enable: true
+    username: suweijie
+    password: Suweijie0217

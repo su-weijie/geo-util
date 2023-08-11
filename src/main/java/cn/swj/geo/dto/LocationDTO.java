@@ -3,6 +3,8 @@ package cn.swj.geo.dto;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
@@ -12,6 +14,7 @@ import lombok.Data;
  * @Version 1.0
  */
 @Data
+@ApiModel(value = "经纬度对象")
 public class LocationDTO {
 
     public LocationDTO() {
@@ -25,10 +28,16 @@ public class LocationDTO {
         this.lat = lat;
     }
 
-    //经度
+    /**
+     * 经度*
+     */
+    @ApiModelProperty(value = "经度",notes = "小数")
     private String lng;
 
-    //纬度
+    /**
+     * 纬度*
+     */
+    @ApiModelProperty(value = "纬度",notes = "小数")
     private String lat;
 
     public void check() {
