@@ -7,6 +7,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.persistence.Entity;
+
 /**
  * @Author swj
  * @Date 2023/6/8 11:18
@@ -31,17 +33,17 @@ public class LocationDTO {
     /**
      * 经度*
      */
-    @ApiModelProperty(value = "经度",notes = "小数")
+    @ApiModelProperty(value = "经度", notes = "小数")
     private String lng;
 
     /**
      * 纬度*
      */
-    @ApiModelProperty(value = "纬度",notes = "小数")
+    @ApiModelProperty(value = "纬度", notes = "小数")
     private String lat;
 
     public void check() {
-        if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+        if (!StrUtil.isAllNotBlank(lng, lat)) {
             // x 经度  y 纬度
             throw new RuntimeException("x or y is empty");
         }
@@ -54,7 +56,7 @@ public class LocationDTO {
      * @return
      */
     public boolean equalsObj(Object o) {
-        return equalsObj(o,null,null);
+        return equalsObj(o, null, null);
     }
 
 

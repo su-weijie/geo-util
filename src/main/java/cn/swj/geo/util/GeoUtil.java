@@ -17,9 +17,7 @@ import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -365,7 +363,7 @@ public class GeoUtil {
             JSONObject jsonObject = JSONUtil.parseObj(o);
             String lng = jsonObject.getStr(lngField);
             String lat = jsonObject.getStr(latField);
-            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+            if (!StrUtil.isAllNotBlank(lng, lat)) {
                 throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
             }
         }
@@ -1032,14 +1030,26 @@ public class GeoUtil {
      */
     public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList, String lngField, String latField) {
         adaptLocationToObjectsCheck(locationDTOList, objectList, lngField, latField);
-        List<T> tempObjectList = new ArrayList<>();
-        tempObjectList.addAll(objectList);
         List<T> resList = new ArrayList<>();
-        for (LocationDTO locationDTO : locationDTOList) {
-            T o = tempObjectList.stream().filter(item -> locationDTO.equalsObj(item, lngField, latField)).collect(Collectors.toList()).get(0);
-            tempObjectList.remove(o);
-            resList.add(o);
-        }
+
+        //转成hash
+        Map<String, T> map = new HashMap<>();
+
+        objectList.stream().forEach(item -> {
+            JSONObject jsonObject = JSONUtil.parseObj(item);
+            map.put(jsonObject.getStr(lngField) + "_" + jsonObject.getStr(latField), item);
+        });
+
+        locationDTOList.stream().forEach(item -> {
+
+            T t = map.get(item.getLng() + "_" + item.getLat());
+
+            if (t != null) {
+                resList.add(t);
+            }
+
+        });
+
         return resList;
     }
 

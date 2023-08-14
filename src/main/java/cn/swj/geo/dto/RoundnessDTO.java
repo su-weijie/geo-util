@@ -6,6 +6,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import javax.persistence.Entity;
+
 /**
  * @Author swj
  * @Date 2023/7/11 15:27

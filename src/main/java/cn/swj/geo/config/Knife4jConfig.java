@@ -2,6 +2,7 @@ package cn.swj.geo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.ParameterBuilder;
@@ -61,14 +62,6 @@ public class Knife4jConfig {
                 .build();
     }
 
-    /**
-     * 访问根目录定位到doc.html*
-     * @return
-     */
-    @GetMapping("/")
-    public String redirectToKnife4j() {
-        return "forward:/doc.html"; // 转发到Knife4j的页面
-    }
 
 }
 
