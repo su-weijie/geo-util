@@ -210,13 +210,13 @@ public class GeoUtil {
             throw new RuntimeException("regionLocationDTOList is empty");
         }
 
-        regionLocationDTOList.stream().forEach(item -> item.check());
+        regionLocationDTOList.parallelStream().forEach(item -> item.check());
 
         if (CollectionUtil.isEmpty(locationDTOList)) {
             throw new RuntimeException("locationDTOList is empty");
         }
 
-        locationDTOList.stream().forEach(item -> item.check());
+        locationDTOList.parallelStream().forEach(item -> item.check());
     }
 
     //check params
@@ -352,21 +352,18 @@ public class GeoUtil {
      * @param objectList
      */
     private static void checkObjectListIzContainField(List<?> objectList, String lngField, String latField) {
-        if (!StrUtil.isAllNotBlank(lngField, latField)) {
-            lngField = "lng";
-            latField = "lat";
-        }
         if (CollectionUtil.isEmpty(objectList)) {
             throw new RuntimeException("objectList is empty");
         }
-        for (Object o : objectList) {
-            JSONObject jsonObject = JSONUtil.parseObj(o);
+
+        objectList.stream().forEach(item -> {
+            JSONObject jsonObject = JSONUtil.parseObj(item);
             String lng = jsonObject.getStr(lngField);
             String lat = jsonObject.getStr(latField);
             if (!StrUtil.isAllNotBlank(lng, lat)) {
                 throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
             }
-        }
+        });
     }
 
     //checkParam
@@ -374,7 +371,7 @@ public class GeoUtil {
         if (CollectionUtil.isEmpty(locationDTOList)) {
             throw new RuntimeException("locationDTOList is empty");
         }
-        locationDTOList.stream().forEach(item -> item.check());
+        locationDTOList.parallelStream().forEach(item -> item.check());
 
         checkObjectListIzContainField(objectList, lngField, latField);
 
@@ -401,6 +398,7 @@ public class GeoUtil {
                 resList.add(locationDTO);
             }
         }
+
         return resList;
     }
 
@@ -970,7 +968,7 @@ public class GeoUtil {
      * @return
      */
     public static List<LocationDTO> convert2LocationDTOList(List<?> objectList) {
-        return convert2LocationDTOList(objectList, null, null);
+        return convert2LocationDTOList(objectList, "lng", "lat");
     }
 
     /**
@@ -980,7 +978,7 @@ public class GeoUtil {
      * @return
      */
     public static LocationDTO convert2LocationDTO(Object obj) {
-        return convert2LocationDTOList(Arrays.asList(obj), null, null).get(0);
+        return convert2LocationDTOList(Arrays.asList(obj), "lng", "lat").get(0);
     }
 
     /**
@@ -991,22 +989,20 @@ public class GeoUtil {
      */
     public static List<LocationDTO> convert2LocationDTOList(List<?> objectList, String lngField, String latField) {
         if (!StrUtil.isAllNotBlank(lngField, latField)) {
-            lngField = "lng";
-            latField = "lat";
+            return Collections.emptyList();
         }
         if (CollectionUtil.isEmpty(objectList)) {
             throw new RuntimeException("objectList is empty");
         }
-        List<LocationDTO> locationDTOList = new ArrayList<>();
-        for (Object o : objectList) {
-            JSONObject jsonObject = JSONUtil.parseObj(o);
+        List<LocationDTO> locationDTOList = objectList.parallelStream().map(item -> {
+            JSONObject jsonObject = JSONUtil.parseObj(item);
             String lng = jsonObject.getStr(lngField);
             String lat = jsonObject.getStr(latField);
             if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
                 throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
             }
-            locationDTOList.add(new LocationDTO(lng, lat));
-        }
+            return new LocationDTO(lng, lat);
+        }).collect(Collectors.toList());
         return locationDTOList;
     }
 
@@ -1018,7 +1014,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList) {
-        return adaptLocationToObjects(locationDTOList, objectList, null, null);
+        return adaptLocationToObjects(locationDTOList, objectList, "lng", "lat");
     }
 
     /**
@@ -1029,28 +1025,33 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> adaptLocationToObjects(List<LocationDTO> locationDTOList, List<T> objectList, String lngField, String latField) {
+
+        if (!StrUtil.isAllNotBlank(lngField, latField)) {
+            return Collections.emptyList();
+        }
+
         adaptLocationToObjectsCheck(locationDTOList, objectList, lngField, latField);
-        List<T> resList = new ArrayList<>();
 
         //转成hash
         Map<String, T> map = new HashMap<>();
 
-        objectList.stream().forEach(item -> {
+        objectList.parallelStream().forEach(item -> {
             JSONObject jsonObject = JSONUtil.parseObj(item);
             map.put(jsonObject.getStr(lngField) + "_" + jsonObject.getStr(latField), item);
         });
 
-        locationDTOList.stream().forEach(item -> {
+        List<T> resList = locationDTOList.parallelStream().map(item -> {
 
             T t = map.get(item.getLng() + "_" + item.getLat());
 
-            if (t != null) {
-                resList.add(t);
+            if (ObjectUtil.isNotEmpty(t)) {
+                return t;
             }
-
-        });
+            return null;
+        }).filter(item -> item != null).collect(Collectors.toList());
 
         return resList;
     }
+
 
 }
