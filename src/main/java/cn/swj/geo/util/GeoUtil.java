@@ -995,14 +995,19 @@ public class GeoUtil {
             throw new RuntimeException("objectList is empty");
         }
         List<LocationDTO> locationDTOList = objectList.parallelStream().map(item -> {
-            JSONObject jsonObject = JSONUtil.parseObj(item);
-            String lng = jsonObject.getStr(lngField);
-            String lat = jsonObject.getStr(latField);
-            if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
-                throw new RuntimeException("There are objects in the collection without one of the fields (" + lngField + "," + latField + ")");
+            try {
+                JSONObject jsonObject = JSONUtil.parseObj(item);
+                String lng = jsonObject.getStr(lngField);
+                String lat = jsonObject.getStr(latField);
+                if (StrUtil.isBlank(lng) || StrUtil.isBlank(lat)) {
+                    return null;
+                }
+                return new LocationDTO(lng, lat);
+            }catch (Exception e) {
+                return null;
             }
-            return new LocationDTO(lng, lat);
-        }).collect(Collectors.toList());
+
+        }).filter(item -> item instanceof LocationDTO).collect(Collectors.toList());
         return locationDTOList;
     }
 
