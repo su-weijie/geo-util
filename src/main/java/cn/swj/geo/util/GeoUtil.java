@@ -502,14 +502,7 @@ public class GeoUtil {
      * @return 有在里面的点位信息
      */
     public static <T> List<T> objListIsContainedRegion(List<LocationDTO> regionLocationDTOList, List<T> objList) {
-
-        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
-
-        List<LocationDTO> resList = pointListIsContainedRegion(regionLocationDTOList, locationDTOList);
-
-        List<T> tList = adaptLocationToObjects(resList, objList);
-
-        return tList;
+        return objListIsContainedRegion(regionLocationDTOList, objList, "lng", "lat");
     }
 
 
@@ -525,6 +518,10 @@ public class GeoUtil {
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
         List<LocationDTO> resList = pointListIsContainedRegion(regionLocationDTOList, locationDTOList);
+
+        if (CollectionUtil.isEmpty(resList)) {
+            return Collections.emptyList();
+        }
 
         List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
@@ -560,14 +557,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> objListIsContainedRegionSequence(List<LocationDTO> regionLocationDTOList, List<T> objList) {
-
-        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
-
-        List<LocationDTO> resList = pointListIsContainedRegionSequence(regionLocationDTOList, locationDTOList);
-
-        List<T> tList = adaptLocationToObjects(resList, objList);
-
-        return tList;
+        return objListIsContainedRegionSequence(regionLocationDTOList, objList, "lng", "lat");
     }
 
 
@@ -583,6 +573,10 @@ public class GeoUtil {
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
         List<LocationDTO> resList = pointListIsContainedRegionSequence(regionLocationDTOList, locationDTOList);
+
+        if (CollectionUtil.isEmpty(resList)) {
+            return Collections.emptyList();
+        }
 
         List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
@@ -648,14 +642,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> objListIsContainedRoundRegion(RoundnessDTO roundnessDTO, List<T> objList) {
-
-        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
-
-        List<LocationDTO> resList = pointListIsContainedRoundRegion(roundnessDTO, locationDTOList);
-
-        List<T> tList = adaptLocationToObjects(resList, objList);
-
-        return tList;
+        return objListIsContainedRoundRegion(roundnessDTO, objList, "lng", "lat");
     }
 
     /**
@@ -670,6 +657,10 @@ public class GeoUtil {
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
         List<LocationDTO> resList = pointListIsContainedRoundRegion(roundnessDTO, locationDTOList);
+
+        if (CollectionUtil.isEmpty(resList)) {
+            return Collections.emptyList();
+        }
 
         List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
@@ -811,14 +802,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> calculateShortestDistanceFromLine4Objs(List<LocationDTO> lineLocationDTOList, List<T> objList, String distance) {
-
-        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
-
-        List<LocationDTO> resList = calculateShortestDistanceFromLine4Points(lineLocationDTOList, locationDTOList, distance);
-
-        List<T> tList = adaptLocationToObjects(resList, objList);
-
-        return tList;
+        return calculateShortestDistanceFromLine4Objs(lineLocationDTOList, objList, distance, "lng", "lat");
     }
 
 
@@ -837,6 +821,10 @@ public class GeoUtil {
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
         List<LocationDTO> resList = calculateShortestDistanceFromLine4Points(lineLocationDTOList, locationDTOList, distance);
+
+        if (CollectionUtil.isEmpty(resList)) {
+            return Collections.emptyList();
+        }
 
         List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
@@ -929,14 +917,7 @@ public class GeoUtil {
      * @return
      */
     public static <T> List<T> calculateShortestDistanceFromCurve4Objs(List<LocationDTO> curveLocationDTOList, List<T> objList, String distance) {
-
-        List<LocationDTO> locationDTOList = convert2LocationDTOList(objList);
-
-        List<LocationDTO> resList = calculateShortestDistanceFromCurve4Points(curveLocationDTOList, locationDTOList, distance);
-
-        List<T> tList = adaptLocationToObjects(resList, objList);
-
-        return tList;
+        return calculateShortestDistanceFromCurve4Objs(curveLocationDTOList, objList, distance, "lng", "lat");
     }
 
     /**
@@ -954,6 +935,10 @@ public class GeoUtil {
         List<LocationDTO> locationDTOList = convert2LocationDTOList(objList, lngField, latField);
 
         List<LocationDTO> resList = calculateShortestDistanceFromCurve4Points(curveLocationDTOList, locationDTOList, distance);
+
+        if (CollectionUtil.isEmpty(resList)) {
+            return Collections.emptyList();
+        }
 
         List<T> tList = adaptLocationToObjects(resList, objList, lngField, latField);
 
@@ -1003,7 +988,7 @@ public class GeoUtil {
                     return null;
                 }
                 return new LocationDTO(lng, lat);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 return null;
             }
 
